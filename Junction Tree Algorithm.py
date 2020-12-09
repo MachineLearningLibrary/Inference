@@ -23,16 +23,18 @@ class Belief_Node:
         self.destination_state = destination_state
 
 class Belief_Graph:
-	def __init__(self, edges):
+    def __init__(self, edges):
+        self.adj = [None] * num_variables
 
-		self.adj = [None] * num_variables
+        for i in range(num_variables):
+            self.adj[i] = []
 
-		for i in range(num_variables):
-			self.adj[i] = []
-
-		for e in edges:
-			node = Belief_Node(e.dest, e.source_state, e.destination_state)
-			self.adj[e.src].append(node)
+        for e in edges:
+            if e[0].src == e[0].dest:
+                continue
+            
+            node = Belief_Node(e[0].dest, e[0].source_state, e[0].destination_state)
+            self.adj[e[0].src].append(node)
 
 class Edge:
     def __init__(self, src, dest, source_state, destination_state):
@@ -63,6 +65,14 @@ class Graph:
             self.adj[e.dest].append(node2)
 
 #Numerator States
+belief_potential_data = [[Belief_Edge(0, 0, True, True), [0.5, 0.5, 0.5, 0.5]], [Belief_Edge(0, 1, True, True), [0.25, 0.25, 0.25, 0.25]], [Belief_Edge(0, 2, True, True), [0.25, 0.25, 0.25, 0.25]], [Belief_Edge(0, 3, True, True), [0.25, 0.25, 0.25, 0.25]],
+                         [Belief_Edge(1, 4, True, True), [0.25, 0.25, 0.25, 0.25]],
+                         [Belief_Edge(2, 6, True, True), [0.25, 0.25, 0.25, 0.25]],
+                         [Belief_Edge(3, 4, True, True), [0.25, 0.25, 0.25, 0.25]], [Belief_Edge(3, 5, True, True), [0.25, 0.25, 0.25, 0.25]], [Belief_Edge(3, 6, True, True), [0.25, 0.25, 0.25, 0.25]],
+                         [Belief_Edge(4, 7, True, True), [0.25, 0.25, 0.25, 0.25]],
+                         [Belief_Edge(5, 7, True, True), [0.25, 0.25, 0.25, 0.25]], [Belief_Edge(5, 8, True, True), [0.25, 0.25, 0.25, 0.25]],
+                         [Belief_Edge(6, 8, True, True), [0.25, 0.25, 0.25, 0.25]]]            
+
 belief_data = [Belief_Edge(0, 1, True, True), Belief_Edge(0, 2, True, True), Belief_Edge(0, 3, True, True),
                Belief_Edge(1, 4, True, True),
                Belief_Edge(2, 6, True, True),
@@ -71,7 +81,7 @@ belief_data = [Belief_Edge(0, 1, True, True), Belief_Edge(0, 2, True, True), Bel
                Belief_Edge(5, 7, True, True), Belief_Edge(5, 8, True, True),
                Belief_Edge(6, 8, True, True)]
 
-belief_network = Belief_Graph(belief_data)
+belief_network = Belief_Graph(belief_potential_data)
 
 for i in range(len(belief_network.adj)):
     for j in range(len(belief_network.adj[i])):
@@ -368,7 +378,7 @@ for h in range(len(clique_final_selection)):
         junction_tree[k[1]][1].append(k[0])
 
 print(junction_tree)
-
+"""
 belief_potential_data = [[Belief_Edge(0, 0, True, True), [0.5, 0.5, 0.5, 0.5]], [Belief_Edge(0, 1, True, True), [0.25, 0.25, 0.25, 0.25]], [Belief_Edge(0, 2, True, True), [0.25, 0.25, 0.25, 0.25]], [Belief_Edge(0, 3, True, True), [0.25, 0.25, 0.25, 0.25]],
                          [Belief_Edge(1, 4, True, True), [0.25, 0.25, 0.25, 0.25]],
                          [Belief_Edge(2, 6, True, True), [0.25, 0.25, 0.25, 0.25]],
@@ -376,7 +386,7 @@ belief_potential_data = [[Belief_Edge(0, 0, True, True), [0.5, 0.5, 0.5, 0.5]], 
                          [Belief_Edge(4, 7, True, True), [0.25, 0.25, 0.25, 0.25]],
                          [Belief_Edge(5, 7, True, True), [0.25, 0.25, 0.25, 0.25]], [Belief_Edge(5, 8, True, True), [0.25, 0.25, 0.25, 0.25]],
                          [Belief_Edge(6, 8, True, True), [0.25, 0.25, 0.25, 0.25]]]
-
+"""
 
 #list out all the potentials
 potentials = []
@@ -463,6 +473,11 @@ def propagate(current_tree):
             separator.append(a)
             past_trees.append(a)
     
+    if current_tree not in past_trees:
+        past_trees.append(current_tree)
+    
+    #print(past_trees)
+    
     if separator == []:
         return
     
@@ -478,17 +493,17 @@ def propagate(current_tree):
                         temp_tree.remove(a)
                 
                 separator_node.append([temp_tree, n, [current_tree, m]])
-    print("HERE")
-    print(tree_node)
-    print(separator_node)
+    #print("HERE")
+    #print(tree_node)
+    #print(separator_node)
     
-    print(potentials)    
+    #print(potentials)    
     
     branches = []
     for p in potentials:
         if p[1] == current_tree:
             branches.append(p)
-    print(branches)
+    #print(branches)
     
     
     
@@ -523,12 +538,18 @@ def propagate(current_tree):
     
         solution = 1
         for r in branches:
+            #print(r)
+            
+            for y in potentials:
+                if y[0] == r[0]:
+                    y[2] = r[2]
+            
             solution = solution * r[2]
         
         old_solution = separator_potentials[e[1]][2]
         separator_potentials[e[1]][2] = solution
-        print(old_solution)
-        print(separator_potentials[e[1]][2])
+        #print(old_solution)
+        #print(separator_potentials[e[1]][2])
         
         #print(junction_tree)
         
@@ -540,4 +561,18 @@ def propagate(current_tree):
     
             
 propagate(0) 
+print(junction_tree)
+#print(potentials)
+
+past_trees.clear()
+past_trees.append(4)
+
+propagate(5)
+print(junction_tree)
+
+past_trees.clear()
+past_trees.append(3)
+past_trees.append(5)
+
+propagate(4)
 print(junction_tree)
